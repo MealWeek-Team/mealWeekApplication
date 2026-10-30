@@ -5,6 +5,7 @@ import PlannerPage from './pages/PlannerPage'
 import ShoppingListPage from './pages/ShoppingListPage'
 import AdminPage from './pages/AdminPage'
 import LoginPage from './pages/LoginPage'
+import NewRecipePage from './pages/NewRecipePage' 
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/shopping-list" element={<ShoppingListPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/recipes/new" element={<NewRecipePage />} />
       </Route>
     </Routes>
   )
