@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate} from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 
 const links = [
   { to: '/recipes', label: 'Recipes' },
@@ -8,6 +9,15 @@ const links = [
 ]
 
 export default function AppLayout() {
+
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  function handleSignOut() {
+    signOut()
+    navigate('/login')
+  }
+
   return (
     <>
       <header className="topbar">
@@ -20,7 +30,14 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <span className="avatar">A</span>
+        
+          {user && (
+          <div className="user-box">
+            <span className="avatar">{user.name[0]}</span>
+            <button className="link-button" onClick={handleSignOut}>Sign out</button>
+          </div>
+        )}
+        
       </header>
       <main className="page">
         <Outlet />
