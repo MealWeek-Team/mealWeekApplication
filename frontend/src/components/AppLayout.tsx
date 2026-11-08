@@ -23,7 +23,9 @@ export default function AppLayout() {
       <header className="topbar">
         <span className="logo">MealWeek</span>
         <nav>
-          {links.map((l) => (
+          {links
+          .filter((l) => l.to !== '/admin' || user?.role === 'admin')
+          .map((l) => (
             <NavLink key={l.to} to={l.to}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               {l.label}
