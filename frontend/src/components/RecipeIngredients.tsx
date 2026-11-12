@@ -1,28 +1,19 @@
 
-import { useState } from 'react'
+import { ingredientCatalog, isValidQuantity } from '../api/ingredients'
 
-type Ingredient = {
-  id: number
-  name: string
-  unit: string
-}
+// One row in the form; quantity is a string while the user is typing.
 
-// Temporary catalog for frontend development.
-// Later, this will come from the backend.
-const ingredientCatalog: Ingredient[] = [
-  { id: 1, name: 'Flour', unit: 'g' },
-  { id: 2, name: 'Milk', unit: 'ml' },
-  { id: 3, name: 'Eggs', unit: 'pcs' },
-  { id: 4, name: 'Sugar', unit: 'g' },
-]
-
-type RecipeIngredient = {
+export type IngredientDraft = {
   ingredientId: number
   quantity: string
 }
 
-export default function RecipeIngredients() {
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>([])
+type Props = {
+  value: IngredientDraft[]
+  onChange: (next: IngredientDraft[]) => void
+}
+
+export default function RecipeIngredients({ value: ingredients, onChange }: Props) {
 
   // Add an ingredient without duplicates
   function addIngredient() {
@@ -35,16 +26,18 @@ export default function RecipeIngredients() {
 
     if (!available) return
 
-    setIngredients((previous) => [
-      ...previous,
-      { ingredientId: available.id, quantity: '1' },
-    ])
+    onChange(
+      [
+        ...ingredients,
+        { ingredientId: available.id, quantity: '1' },
+      ]
+    )
   }
 
   // Update an ingredient's quantity
   function updateQuantity(index: number, quantity: string) {
-    setIngredients((previous) =>
-      previous.map((item, i) =>
+    onChange(
+      ingredients.map((item, i) =>
         i === index ? { ...item, quantity } : item
       )
     )
@@ -52,35 +45,21 @@ export default function RecipeIngredients() {
 
   // Change the selected ingredient
   function changeIngredient(index: number, newId: number) {
-    setIngredients((previous) => {
-      if (
-        previous.some(
-          (item, i) => i !== index && item.ingredientId === newId
-        )
-      ) {
-        return previous
-      }
+    const isDuplicate = ingredients.some(
+      (item, i) => i !== index && item.ingredientId === newId
+    )
+    if (isDuplicate) return
 
-      return previous.map((item, i) =>
+    onChange(
+      ingredients.map((item, i) =>
         i === index ? { ...item, ingredientId: newId } : item
       )
-    })
+    )
   }
 
   // Remove an ingredient
   function removeIngredient(index: number) {
-    setIngredients((previous) =>
-      previous.filter((_, i) => i !== index)
-    )
-  }
-
-  // Check whether a quantity is valid
-  function isValidQuantity(quantity: string) {
-    return (
-      quantity.trim() !== '' &&
-      Number.isFinite(Number(quantity)) &&
-      Number(quantity) > 0
-    )
+    onChange(ingredients.filter((_, i) => i !== index))
   }
 
   const hasInvalidQuantity = ingredients.some(
@@ -89,8 +68,6 @@ export default function RecipeIngredients() {
 
   return (
     <div>
-      <h2>Recipe Ingredients</h2>
-
       {ingredients.map((item, index) => {
         const ingredient = ingredientCatalog.find(
           (catalogItem) => catalogItem.id === item.ingredientId
@@ -99,13 +76,7 @@ export default function RecipeIngredients() {
         return (
           <div
             key={item.ingredientId}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '10px',
-            }}
-          >
+            className="ingredient-row">
             <select
               aria-label={`Ingredient ${index + 1}`}
               value={item.ingredientId}
@@ -138,12 +109,7 @@ export default function RecipeIngredients() {
               min="0.01"
               step="any"
               value={item.quantity}
-              style={{
-                width: '100px',
-                borderColor: isValidQuantity(item.quantity)
-                  ? undefined
-                  : 'red',
-              }}
+              className={isValidQuantity(item.quantity) ? undefined : 'invalid'}
               aria-invalid={!isValidQuantity(item.quantity)}
               onChange={(e) =>
                 updateQuantity(index, e.target.value)
@@ -157,9 +123,10 @@ export default function RecipeIngredients() {
               }}
             />
 
-            <span>{ingredient?.unit}</span>
+            <span className="unit" >{ingredient?.unit}</span>
 
             <button
+              className="link-button"
               type="button"
               onClick={() => removeIngredient(index)}
             >
@@ -170,6 +137,7 @@ export default function RecipeIngredients() {
       })}
 
       <button
+        className="btn"
         type="button"
         onClick={addIngredient}
         disabled={ingredients.length === ingredientCatalog.length}
@@ -180,7 +148,7 @@ export default function RecipeIngredients() {
       {hasInvalidQuantity && (
         <p
           role="alert"
-          style={{ color: 'red', marginTop: '10px' }}
+          className="error"
         >
           Quantity must be greater than zero.
         </p>

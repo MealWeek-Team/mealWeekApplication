@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate} from 'react-router-dom'
+import { useAuth } from '../auth/useAuth.ts'
 
 const links = [
   { to: '/recipes', label: 'Recipes' },
@@ -8,19 +9,37 @@ const links = [
 ]
 
 export default function AppLayout() {
+
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  function handleSignOut() {
+    signOut()
+    navigate('/login')
+  }
+
   return (
     <>
       <header className="topbar">
         <span className="logo">MealWeek</span>
         <nav>
-          {links.map((l) => (
+          {links
+          .filter((l) => l.to !== '/admin' || user?.role === 'admin')
+          .map((l) => (
             <NavLink key={l.to} to={l.to}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               {l.label}
             </NavLink>
           ))}
         </nav>
-        <span className="avatar">A</span>
+        
+          {user && (
+          <div className="user-box">
+            <span className="avatar">{user.name[0]}</span>
+            <button className="link-button" onClick={handleSignOut}>Sign out</button>
+          </div>
+        )}
+        
       </header>
       <main className="page">
         <Outlet />
