@@ -5,8 +5,8 @@ import RecipesPage from './pages/RecipesPage'
 import PlannerPage from './pages/PlannerPage'
 import ShoppingListPage from './pages/ShoppingListPage'
 import AdminPage from './pages/AdminPage'
-import LoginPage from './pages/LoginPage'
-import NewRecipePage from './pages/NewRecipePage' 
+import LoginPage from './pages/LoginPage' 
+import RecipeFormPage from './pages/RecipeFormPage'
 
 export default function App() {
   return (
@@ -19,8 +19,8 @@ export default function App() {
           <Route path="/recipes" element={<RecipesPage />} />
           <Route path="/planner" element={<PlannerPage />} />
           <Route path="/shopping-list" element={<ShoppingListPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/recipes/new" element={<NewRecipePage />} />
+          <Route path="/recipes/new" element={<RecipeFormPage />} />
+          <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
 
           <Route element={<ProtectedRoute adminOnly />}>
             <Route path="/admin" element={<AdminPage />} />
