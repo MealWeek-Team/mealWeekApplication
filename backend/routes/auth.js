@@ -98,7 +98,7 @@ router.post('/google', async (req, res) => {
         }
 
         res.json({ token: signToken(user), user: user.toPublicJSON() });
-    } catch {
+    } catch (err){
         console.error('Google auth error:', err);
         res.status(401).json({ message: err.message || 'Google authentication failed' })
     }
