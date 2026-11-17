@@ -1,10 +1,12 @@
 import { createContext } from 'react'
 
-export type User = { id: number; name: string; role: 'user' | 'admin' }
+export type User = { id: string; name: string; email: string; role: 'user' | 'admin' }
 
 export type AuthValue = {
   user: User | null
-  signIn: (who?: 'anna' | 'tomas') => void
+  loading: boolean
+  loginWithGoogle: (credential: string) => Promise<void>
+  devSignInAdmin: () => void
   signOut: () => void
 }
 
