@@ -29,7 +29,7 @@ const SEED: Recipe[] = [
     {
         id: 2, ownerId: '1', name: 'Pancakes',
         prepMinutes: 20, tags: ['vegetarian'],
-        ingredients: [{ ingredientId: 3, quantity: 200 }, { ingredientId: 4, quantity: 300 }],
+        ingredients: [{ ingredientId: 3, quantity: 2 }, { ingredientId: 4, quantity: 300 }],
         instructions: 'Mix everything and fry on a hot pan.',
     }
 ]

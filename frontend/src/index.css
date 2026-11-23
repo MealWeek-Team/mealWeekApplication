@@ -5,6 +5,7 @@
   --text: #1f2a24;
   --muted: #6b746e;
   --border: #e3e5e1;
+  --danger: #c0392b;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
