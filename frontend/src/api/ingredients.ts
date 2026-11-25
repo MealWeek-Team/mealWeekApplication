@@ -1,22 +1,20 @@
+import { apiFetch } from './clients'
+
 export type Ingredient = {
-  id: number
+  id: string
   name: string
   unit: string
+  category?: string
 }
 
-// Temporary catalog for frontend development.
-// Later, this will come from the backend.
-export const ingredientCatalog: Ingredient[] = [
-  { id: 1, name: 'Flour', unit: 'g' },
-  { id: 2, name: 'Milk', unit: 'ml' },
-  { id: 3, name: 'Eggs', unit: 'pcs' },
-  { id: 4, name: 'Sugar', unit: 'g' },
-]
+export function getIngredientCatalog() {
+  return apiFetch<Ingredient[]>('/api/ingredients')
+}
 
 export function isValidQuantity(quantity: string) {
-    return (
-      quantity.trim() !== '' &&
-      Number.isFinite(Number(quantity)) &&
-      Number(quantity) > 0
-    )
-  }
+  return (
+    quantity.trim() !== '' &&
+    Number.isFinite(Number(quantity)) &&
+    Number(quantity) > 0
+  )
+}

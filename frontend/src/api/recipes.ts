@@ -1,5 +1,5 @@
 export type RecipeIngredient = {
-    ingredientId: number
+    ingredientId: string
     quantity: number
 }
 
@@ -23,13 +23,13 @@ const SEED: Recipe[] = [
     {
         id: 1, ownerId: '1', name: 'Pasta with tomato sauce',
         prepMinutes: 30, tags: ['pasta', 'vegetarian'],
-        ingredients: [{ ingredientId: 1, quantity: 200 }, { ingredientId: 2, quantity: 1 }],
+        ingredients: [{ ingredientId: '1', quantity: 200 }, { ingredientId: '2', quantity: 1 }],
         instructions: 'Cook pasta. Prepare sauce. Mix together.'
     },
     {
         id: 2, ownerId: '1', name: 'Pancakes',
         prepMinutes: 20, tags: ['vegetarian'],
-        ingredients: [{ ingredientId: 3, quantity: 2 }, { ingredientId: 4, quantity: 300 }],
+        ingredients: [{ ingredientId: '3', quantity: 2 }, { ingredientId: '4', quantity: 300 }],
         instructions: 'Mix everything and fry on a hot pan.',
     }
 ]
@@ -38,7 +38,15 @@ const USED_IN_PLAN = new Set<number>([2])
 
 function load(): Recipe[] {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : SEED
+    if (!raw) return SEED
+
+    return (JSON.parse(raw) as Recipe[]).map((recipe) => ({
+        ...recipe,
+        ingredients: recipe.ingredients.map((ingredient) => ({
+            ...ingredient,
+            ingredientId: String(ingredient.ingredientId),
+        })),
+    }))
 }
 
 function save(recipes: Recipe[]) {

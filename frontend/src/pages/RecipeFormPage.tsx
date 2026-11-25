@@ -2,7 +2,7 @@ import { useState, type FormEvent, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.ts'
 import RecipeIngredients, { type IngredientDraft } from '../components/RecipeIngredients'
-import { isValidQuantity } from '../api/ingredients'
+import { getIngredientCatalog, isValidQuantity, type Ingredient } from '../api/ingredients'
 import { DIETARY_TAGS, createRecipe, getRecipe, type RecipeInput, updateRecipe } from '../api/recipes'
 
 export default function RecipeFormPage() {
@@ -16,25 +16,55 @@ export default function RecipeFormPage() {
   const [prepMinutes, setPrepMinutes] = useState('30')
   const [tags, setTags] = useState<string[]>([])
   const [ingredients, setIngredients] = useState<IngredientDraft[]>([])
+  const [ingredientCatalog, setIngredientCatalog] = useState<Ingredient[]>([])
   const [instructions, setInstructions] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState('')
 
   useEffect(() => {
-    if (!isEdit || !user) return
-    getRecipe(Number(id), user.id).then((recipe) => {
-      if (!recipe) {
-        setError('Recipe not found.')
-      } else {
-        setName(recipe.name)
-        setPrepMinutes(recipe.prepMinutes.toString())
-        setTags(recipe.tags)
-        setIngredients(recipe.ingredients.map((i) => ({ ingredientId: i.ingredientId, quantity: i.quantity.toString() })))
-        setInstructions(recipe.instructions)
-      }
-      setLoading(false)
-    })
+    let cancelled = false
+
+    getIngredientCatalog()
+      .then((catalog) => {
+        if (!cancelled) setIngredientCatalog(catalog)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCatalogError(err instanceof Error ? err.message : 'Failed to load ingredients.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogLoading(false)
+      })
+
+    if (isEdit && user) {
+      getRecipe(Number(id), user.id)
+        .then((recipe) => {
+          if (cancelled) return
+          if (!recipe) {
+            setError('Recipe not found.')
+          } else {
+            setName(recipe.name)
+            setPrepMinutes(recipe.prepMinutes.toString())
+            setTags(recipe.tags)
+            setIngredients(recipe.ingredients.map((i) => ({ ingredientId: String(i.ingredientId), quantity: i.quantity.toString() })))
+            setInstructions(recipe.instructions)
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load recipe.')
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    }
+
+    return () => {
+      cancelled = true
+    }
   }, [id, isEdit, user])
 
 
@@ -46,6 +76,7 @@ export default function RecipeFormPage() {
     if (!name.trim()) return 'Name is required.'
     if (!Number.isInteger(Number(prepMinutes)) || Number(prepMinutes) <= 0) return 'Preparation time must be a positive integer.'
     if (ingredients.length === 0) return 'At least one ingredient is required.'
+    if (ingredients.some((item) => !ingredientCatalog.some((catalogItem) => catalogItem.id === item.ingredientId))) return 'Select a valid ingredient for every row.'
     if (ingredients.some((i) => !isValidQuantity(i.quantity))) return 'All ingredient quantities must be greater than zero.'
     return ''
   }
@@ -53,6 +84,7 @@ export default function RecipeFormPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!user) return
+    if (catalogLoading || catalogError) return
 
     const problem = validate()
     if (problem) {
@@ -109,7 +141,13 @@ export default function RecipeFormPage() {
 
       <fieldset className="field">
         <legend >Ingredients</legend>
-        <RecipeIngredients value={ingredients} onChange={setIngredients} />
+        {catalogLoading ? (
+          <p>Loading ingredients…</p>
+        ) : catalogError ? (
+          <p role="alert" className="error">{catalogError}</p>
+        ) : (
+          <RecipeIngredients catalog={ingredientCatalog} value={ingredients} onChange={setIngredients} />
+        )}
       </fieldset>
 
       <label className="field">
@@ -120,7 +158,7 @@ export default function RecipeFormPage() {
       {error && <p role="alert" className="error">{error}</p>}
       <div className="actions">
         <Link className="btn" to="/recipes">Cancel</Link>
-        <button className="btn btn-primary" type="submit" disabled={saving}>
+        <button className="btn btn-primary" type="submit" disabled={saving || catalogLoading || Boolean(catalogError)}>
           {saving ? 'Saving…' : 'Save recipe'}
         </button>
       </div>

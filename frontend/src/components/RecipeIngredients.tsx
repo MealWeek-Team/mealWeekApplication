@@ -1,23 +1,24 @@
 
-import { ingredientCatalog, isValidQuantity } from '../api/ingredients'
+import { type Ingredient, isValidQuantity } from '../api/ingredients'
 
 // One row in the form; quantity is a string while the user is typing.
 
 export type IngredientDraft = {
-  ingredientId: number
+  ingredientId: string
   quantity: string
 }
 
 type Props = {
+  catalog: Ingredient[]
   value: IngredientDraft[]
   onChange: (next: IngredientDraft[]) => void
 }
 
-export default function RecipeIngredients({ value: ingredients, onChange }: Props) {
+export default function RecipeIngredients({ catalog, value: ingredients, onChange }: Props) {
 
   // Add an ingredient without duplicates
   function addIngredient() {
-    const available = ingredientCatalog.find(
+    const available = catalog.find(
       (item) =>
         !ingredients.some(
           (selected) => selected.ingredientId === item.id
@@ -44,7 +45,7 @@ export default function RecipeIngredients({ value: ingredients, onChange }: Prop
   }
 
   // Change the selected ingredient
-  function changeIngredient(index: number, newId: number) {
+  function changeIngredient(index: number, newId: string) {
     const isDuplicate = ingredients.some(
       (item, i) => i !== index && item.ingredientId === newId
     )
@@ -65,11 +66,14 @@ export default function RecipeIngredients({ value: ingredients, onChange }: Prop
   const hasInvalidQuantity = ingredients.some(
     (item) => !isValidQuantity(item.quantity)
   )
+  const hasAvailableIngredient = catalog.some(
+    (item) => !ingredients.some((selected) => selected.ingredientId === item.id)
+  )
 
   return (
     <div>
       {ingredients.map((item, index) => {
-        const ingredient = ingredientCatalog.find(
+        const ingredient = catalog.find(
           (catalogItem) => catalogItem.id === item.ingredientId
         )
 
@@ -81,10 +85,10 @@ export default function RecipeIngredients({ value: ingredients, onChange }: Prop
               aria-label={`Ingredient ${index + 1}`}
               value={item.ingredientId}
               onChange={(e) =>
-                changeIngredient(index, Number(e.target.value))
+                changeIngredient(index, e.target.value)
               }
             >
-              {ingredientCatalog
+              {catalog
                 .filter(
                   (catalogItem) =>
                     catalogItem.id === item.ingredientId ||
@@ -101,6 +105,11 @@ export default function RecipeIngredients({ value: ingredients, onChange }: Prop
                     {catalogItem.name}
                   </option>
                 ))}
+              {!catalog.some((catalogItem) => catalogItem.id === item.ingredientId) && (
+                <option value={item.ingredientId}>
+                  Unknown ingredient ({item.ingredientId})
+                </option>
+              )}
             </select>
 
             <input
@@ -140,7 +149,7 @@ export default function RecipeIngredients({ value: ingredients, onChange }: Prop
         className="btn"
         type="button"
         onClick={addIngredient}
-        disabled={ingredients.length === ingredientCatalog.length}
+        disabled={!hasAvailableIngredient}
       >
         + Add Ingredient
       </button>
