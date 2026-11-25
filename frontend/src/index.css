@@ -59,3 +59,10 @@ h1 { font-size: 24px; margin: 0 0 16px; }
 .ingredient-row input { width: 100px; }
 .ingredient-row input.invalid { border-color: var(--danger); }
 .unit { width: 32px; color: var(--muted); }
+
+.planner-grid { display: grid; grid-template-columns: 100px repeat(7, 1fr); gap: 8px; align-items: stretch; }
+.planner-day { font-weight: 600; padding: 4px 0; }
+.planner-slot-label { color: var(--muted); align-self: center; }
+.planner-cell { min-height: 72px; border: 1px dashed var(--border); border-radius: 8px;
+  background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.planner-cell:hover { border-color: var(--green); color: var(--green); }
