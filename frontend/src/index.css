@@ -24,7 +24,7 @@ body { margin: 0; }
 .user-box { display: flex; align-items: center; gap: 10px; }
 .link-button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; }
 .link-button:hover { color: var(--green); }
-
+.nav-link, .link-button { white-space: nowrap; }
 
 h1 { font-size: 24px; margin: 0 0 16px; }
 .muted { color: var(--muted); }
@@ -60,9 +60,29 @@ h1 { font-size: 24px; margin: 0 0 16px; }
 .ingredient-row input.invalid { border-color: var(--danger); }
 .unit { width: 32px; color: var(--muted); }
 
+
 .planner-grid { display: grid; grid-template-columns: 100px repeat(7, 1fr); gap: 8px; align-items: stretch; }
 .planner-day { font-weight: 600; padding: 4px 0; }
 .planner-slot-label { color: var(--muted); align-self: center; }
 .planner-cell { min-height: 72px; border: 1px dashed var(--border); border-radius: 8px;
   background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .planner-cell:hover { border-color: var(--green); color: var(--green); }
+
+@media (max-width: 600px) {
+  .topbar { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; }
+  .user-box { margin-left: auto; }
+  .topbar nav { order: 3; flex: 0 0 100%; gap: 16px; overflow-x: auto; }
+  .page { margin: 16px auto; }
+
+  .btn { box-sizing: border-box; min-height: 44px; display: inline-flex;
+    align-items: center; justify-content: center; }
+  .recipe-card { flex-direction: column; gap: 12px; }
+  .recipe-card .actions { width: 100%; flex-wrap: nowrap; }
+  .recipe-card .actions .btn { flex: 1; }
+
+  .field input, .field select, .field textarea { font-size: 16px; }
+  .ingredient-row { flex-wrap: nowrap; }
+  .ingredient-row select { flex: 1; min-width: 0; }
+  .ingredient-row input { width: 72px; }
+}
+
