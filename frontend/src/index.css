@@ -6,6 +6,7 @@
   --muted: #6b746e;
   --border: #e3e5e1;
   --danger: #c0392b;
+  --tag-bg: #e6f2ea;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -73,7 +74,15 @@ h1 { font-size: 24px; margin: 0 0 16px; }
   .user-box { margin-left: auto; }
   .topbar nav { order: 3; flex: 0 0 100%; gap: 16px; overflow-x: auto; }
   .page { margin: 16px auto; }
+  .page-header { flex-wrap: wrap; gap: 12px; }
+  .page-header .actions { flex: 0 0 100%; }
+  .page-header .actions .btn { flex: 1; }
 
+  .planner-grid { grid-template-columns: 96px repeat(7, 96px); overflow-x: auto; padding-left: 0; }
+  .planner-grid > :nth-child(8n + 1) {
+    position: sticky; left: 0; z-index: 1; background: var(--card);
+    padding-left: 16px; align-self: stretch; display: flex; align-items: center;
+  }
   .btn { box-sizing: border-box; min-height: 44px; display: inline-flex;
     align-items: center; justify-content: center; }
   .recipe-card { flex-direction: column; gap: 12px; }
