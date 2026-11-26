@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const recipeIngredientSchema = new mongoose.Schema(
     {
@@ -52,9 +51,7 @@ const recipeSchema = new mongoose.Schema(
             trim: true
         }
     },
-    {
-        timestamps: true
-    }
+    { timestamps: true }
 );
 
 module.exports = mongoose.model('Recipe', recipeSchema);

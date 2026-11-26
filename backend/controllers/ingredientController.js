@@ -1,13 +1,23 @@
-
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const Ingredient = require('../models/Ingredient');
 const Recipe = require('../models/Recipe');
 
 // GET /api/ingredients
 async function getIngredients(req, res) {
     try {
-        const ingredients = await Ingredient.find().sort({ name: 1 });
-        return res.status(200).json(ingredients);
+        const ingredients = await Ingredient.find({ isActive: true })
+            .select('_id name category unit')
+            .sort({ name: 1 })
+            .lean();
+
+        return res.status(200).json(
+            ingredients.map((ingredient) => ({
+                id: ingredient._id.toString(),
+                name: ingredient.name,
+                category: ingredient.category,
+                unit: ingredient.unit
+            }))
+        );
     } catch (error) {
         console.error('Get ingredients error:', error);
         return res.status(500).json({
@@ -19,7 +29,7 @@ async function getIngredients(req, res) {
 // POST /api/ingredients
 async function createIngredient(req, res) {
     try {
-        const { name, unit } = req.body;
+        const { name, unit, category } = req.body;
 
         if (typeof name !== 'string' || !name.trim()) {
             return res.status(400).json({
@@ -35,7 +45,8 @@ async function createIngredient(req, res) {
 
         const ingredient = await Ingredient.create({
             name: name.trim(),
-            unit: unit.trim()
+            unit: unit.trim(),
+            category: typeof category === 'string' ? category.trim() : undefined
         });
 
         return res.status(201).json(ingredient);
@@ -46,7 +57,7 @@ async function createIngredient(req, res) {
             });
         }
 
-        console.error('Create ingredients error:', error);
+        console.error('Create ingredient error:', error);
         return res.status(500).json({
             message: 'Failed to create ingredient'
         });
@@ -66,10 +77,8 @@ async function updateIngredient(req, res) {
         }
 
         if (
-            (name !== undefined &&
-                (typeof name !== 'string' || !name.trim())) ||
-            (unit !== undefined &&
-                (typeof unit !== 'string' || !unit.trim()))
+            (name !== undefined && (typeof name !== 'string' || !name.trim())) ||
+            (unit !== undefined && (typeof unit !== 'string' || !unit.trim()))
         ) {
             return res.status(400).json({
                 message: 'Invalid ingredient name or unit'
@@ -141,7 +150,6 @@ async function mergeIngredient(req, res) {
         let result;
 
         await session.withTransaction(async () => {
-            // Lock both ingredient records in a consistent order.
             const ids = [sourceId, targetObjectId].sort(
                 (a, b) => a.toString().localeCompare(b.toString())
             );
@@ -208,6 +216,7 @@ async function mergeIngredient(req, res) {
                 });
 
                 recipe.ingredients = updatedIngredients;
+
                 await recipe.save({ session });
             }
 
@@ -227,6 +236,7 @@ async function mergeIngredient(req, res) {
         return res.status(200).json(result);
     } catch (error) {
         console.error('Merge ingredient error:', error);
+
         return res.status(error.statusCode || 500).json({
             message: error.message || 'Failed to merge ingredients'
         });
@@ -251,7 +261,6 @@ async function deleteIngredient(req, res) {
         session = await mongoose.startSession();
 
         await session.withTransaction(async () => {
-            // Lock the ingredient before checking recipe references.
             const ingredient = await Ingredient.findOneAndUpdate(
                 { _id: id },
                 { $inc: { referenceVersion: 1 } },
@@ -287,6 +296,7 @@ async function deleteIngredient(req, res) {
         });
     } catch (error) {
         console.error('Delete ingredient error:', error);
+
         return res.status(error.statusCode || 500).json({
             message: error.message || 'Failed to delete ingredient'
         });

@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const ingredientSchema = new mongoose.Schema(
     {
@@ -14,10 +13,18 @@ const ingredientSchema = new mongoose.Schema(
             required: true,
             unique: true
         },
+        category: {
+            type: String,
+            trim: true
+        },
         unit: {
             type: String,
             required: true,
             trim: true
+        },
+        isActive: {
+            type: Boolean,
+            default: true
         },
         referenceVersion: {
             type: Number,
@@ -26,7 +33,9 @@ const ingredientSchema = new mongoose.Schema(
         }
     },
     {
-        timestamps: true
+        collection: 'ingredients',
+        timestamps: true,
+        versionKey: false
     }
 );
 
