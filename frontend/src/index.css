@@ -6,6 +6,7 @@
   --muted: #6b746e;
   --border: #e3e5e1;
   --danger: #c0392b;
+  --tag-bg: #e6f2ea;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -60,12 +61,28 @@ h1 { font-size: 24px; margin: 0 0 16px; }
 .ingredient-row input.invalid { border-color: var(--danger); }
 .unit { width: 32px; color: var(--muted); }
 
+
+.planner-grid { display: grid; grid-template-columns: 100px repeat(7, 1fr); gap: 8px; align-items: stretch; }
+.planner-day { font-weight: 600; padding: 4px 0; }
+.planner-slot-label { color: var(--muted); align-self: center; }
+.planner-cell { min-height: 72px; border: 1px dashed var(--border); border-radius: 8px;
+  background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.planner-cell:hover { border-color: var(--green); color: var(--green); }
+
 @media (max-width: 600px) {
   .topbar { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; }
   .user-box { margin-left: auto; }
   .topbar nav { order: 3; flex: 0 0 100%; gap: 16px; overflow-x: auto; }
   .page { margin: 16px auto; }
+  .page-header { flex-wrap: wrap; gap: 12px; }
+  .page-header .actions { flex: 0 0 100%; }
+  .page-header .actions .btn { flex: 1; }
 
+  .planner-grid { grid-template-columns: 96px repeat(7, 96px); overflow-x: auto; padding-left: 0; }
+  .planner-grid > :nth-child(8n + 1) {
+    position: sticky; left: 0; z-index: 1; background: var(--card);
+    padding-left: 16px; align-self: stretch; display: flex; align-items: center;
+  }
   .btn { box-sizing: border-box; min-height: 44px; display: inline-flex;
     align-items: center; justify-content: center; }
   .recipe-card { flex-direction: column; gap: 12px; }
@@ -77,3 +94,4 @@ h1 { font-size: 24px; margin: 0 0 16px; }
   .ingredient-row select { flex: 1; min-width: 0; }
   .ingredient-row input { width: 72px; }
 }
+
