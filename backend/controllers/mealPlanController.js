@@ -15,6 +15,11 @@ function isValidDate(date) {
         parsedDate.toISOString().slice(0, 10) === date;
 }
 
+// Validate servings
+function isValidServings(servings) {
+    return Number.isInteger(servings) && servings >= 1;
+}
+
 // GET /api/meal-plans
 async function getMealPlans(req, res) {
     try {
@@ -74,6 +79,9 @@ async function getMealPlans(req, res) {
 async function createMealPlan(req, res) {
     try {
         const { date, mealSlot, recipe } = req.body;
+        const servings = req.body.servings === undefined
+            ? 1
+            : req.body.servings;
 
         if (!isValidDate(date)) {
             return res.status(400).json({
@@ -93,6 +101,12 @@ async function createMealPlan(req, res) {
             });
         }
 
+        if (!isValidServings(servings)) {
+            return res.status(400).json({
+                message: 'Servings must be an integer greater than or equal to 1'
+            });
+        }
+
         const existingRecipe = await Recipe.findOne({
             _id: recipe,
             createdBy: req.userId
@@ -108,7 +122,8 @@ async function createMealPlan(req, res) {
             user: req.userId,
             date,
             mealSlot,
-            recipe
+            recipe,
+            servings
         });
 
         return res.status(201).json(mealPlan);
@@ -137,7 +152,7 @@ async function createMealPlan(req, res) {
 async function updateMealPlan(req, res) {
     try {
         const { id } = req.params;
-        const { recipe } = req.body;
+        const { recipe, servings } = req.body;
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
@@ -145,21 +160,43 @@ async function updateMealPlan(req, res) {
             });
         }
 
-        if (!mongoose.isValidObjectId(recipe)) {
+        if (recipe === undefined && servings === undefined) {
             return res.status(400).json({
-                message: 'Invalid recipe ID'
+                message: 'Provide recipe or servings to update'
             });
         }
 
-        const existingRecipe = await Recipe.findOne({
-            _id: recipe,
-            createdBy: req.userId
-        });
+        const updates = {};
 
-        if (!existingRecipe) {
-            return res.status(404).json({
-                message: 'Recipe not found'
+        if (recipe !== undefined) {
+            if (!mongoose.isValidObjectId(recipe)) {
+                return res.status(400).json({
+                    message: 'Invalid recipe ID'
+                });
+            }
+
+            const existingRecipe = await Recipe.findOne({
+                _id: recipe,
+                createdBy: req.userId
             });
+
+            if (!existingRecipe) {
+                return res.status(404).json({
+                    message: 'Recipe not found'
+                });
+            }
+
+            updates.recipe = recipe;
+        }
+
+        if (servings !== undefined) {
+            if (!isValidServings(servings)) {
+                return res.status(400).json({
+                    message: 'Servings must be an integer greater than or equal to 1'
+                });
+            }
+
+            updates.servings = servings;
         }
 
         const mealPlan = await MealPlan.findOneAndUpdate(
@@ -168,7 +205,7 @@ async function updateMealPlan(req, res) {
                 user: req.userId
             },
             {
-                $set: { recipe }
+                $set: updates
             },
             {
                 new: true,
