@@ -1,9 +1,46 @@
 
 const Recipe = require('../models/Recipe');
+const Ingredient = require('../models/Ingredient');
 const mongoose = require('mongoose');
 
+// Validate ingredient references and lock them within the transaction
+async function lockIngredients(ingredients, session) {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+        return 'A recipe must contain at least one ingredient';
+    }
+
+    const ids = [];
+
+    for (const item of ingredients) {
+        if (
+            !item ||
+            typeof item !== 'object' ||
+            !mongoose.isValidObjectId(item.ingredient)
+        ) {
+            return 'Invalid ingredient ID';
+        }
+
+        ids.push(String(item.ingredient));
+    }
+
+    const uniqueIds = [...new Set(ids)].sort();
+
+    for (const id of uniqueIds) {
+        const ingredient = await Ingredient.findOneAndUpdate(
+            { _id: id },
+            { $inc: { referenceVersion: 1 } },
+            { new: true, session }
+        );
+
+        if (!ingredient) {
+            return 'One or more ingredients do not exist';
+        }
+    }
+
+    return null;
+}
+
 // GET /api/recipes
-// Get recipes belonging to the authenticated user
 async function getRecipes(req, res) {
     try {
         const recipes = await Recipe.find({
@@ -20,7 +57,6 @@ async function getRecipes(req, res) {
 }
 
 // GET /api/recipes/:id
-// Get a single recipe
 async function getRecipeById(req, res) {
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
@@ -50,20 +86,47 @@ async function getRecipeById(req, res) {
 }
 
 // POST /api/recipes
-// Create a new recipe
 async function createRecipe(req, res) {
+    let session;
+
     try {
-        const recipe = await Recipe.create({
-            ...req.body,
-            createdBy: req.userId
+        session = await mongoose.startSession();
+
+        let createdRecipe;
+
+        await session.withTransaction(async () => {
+            const validationError = await lockIngredients(
+                req.body.ingredients,
+                session
+            );
+
+            if (validationError) {
+                const error = new Error(validationError);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            const recipes = await Recipe.create(
+                [{
+                    ...req.body,
+                    createdBy: req.userId
+                }],
+                { session }
+            );
+
+            createdRecipe = recipes[0];
         });
 
-        return res.status(201).json(recipe);
+        return res.status(201).json(createdRecipe);
     } catch (error) {
         console.error('Create recipe error:', error);
 
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
+        if (
+            error.statusCode ||
+            error.name === 'ValidationError' ||
+            error.name === 'CastError'
+        ) {
+            return res.status(error.statusCode || 400).json({
                 message: error.message
             });
         }
@@ -71,12 +134,17 @@ async function createRecipe(req, res) {
         return res.status(500).json({
             message: 'Failed to create recipe'
         });
+    } finally {
+        if (session) {
+            await session.endSession();
+        }
     }
 }
 
 // PUT /api/recipes/:id
-// Update an existing recipe
 async function updateRecipe(req, res) {
+    let session;
+
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
             return res.status(400).json({
@@ -90,30 +158,55 @@ async function updateRecipe(req, res) {
         delete updates.createdBy;
         delete updates._id;
 
-        const recipe = await Recipe.findOneAndUpdate(
-            {
+        session = await mongoose.startSession();
+
+        let updatedRecipe;
+
+        await session.withTransaction(async () => {
+            const recipe = await Recipe.findOne({
                 _id: req.params.id,
                 createdBy: req.userId
-            },
-            updates,
-            {
-                new: true,
-                runValidators: true
+            }).session(session);
+
+            if (!recipe) {
+                const error = new Error('Recipe not found');
+                error.statusCode = 404;
+                throw error;
             }
-        );
 
-        if (!recipe) {
-            return res.status(404).json({
-                message: 'Recipe not found'
-            });
-        }
+            const ingredientsToLock = updates.ingredients === undefined
+                ? recipe.ingredients
+                : [...recipe.ingredients, ...(
+                    Array.isArray(updates.ingredients)
+                        ? updates.ingredients
+                        : []
+                )];
 
-        return res.status(200).json(recipe);
+            const validationError = await lockIngredients(
+                ingredientsToLock,
+                session
+            );
+
+            if (validationError) {
+                const error = new Error(validationError);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            recipe.set(updates);
+            updatedRecipe = await recipe.save({ session });
+        });
+
+        return res.status(200).json(updatedRecipe);
     } catch (error) {
         console.error('Update recipe error:', error);
 
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
+        if (
+            error.statusCode ||
+            error.name === 'ValidationError' ||
+            error.name === 'CastError'
+        ) {
+            return res.status(error.statusCode || 400).json({
                 message: error.message
             });
         }
@@ -121,11 +214,14 @@ async function updateRecipe(req, res) {
         return res.status(500).json({
             message: 'Failed to update recipe'
         });
+    } finally {
+        if (session) {
+            await session.endSession();
+        }
     }
 }
 
 // DELETE /api/recipes/:id
-// Delete an existing recipe
 async function deleteRecipe(req, res) {
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
